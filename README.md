@@ -12,7 +12,8 @@ Puoi seguire la media nazionale oppure quella di una provincia o di una città: 
 - Tre ambiti: **nazionale**, **provincia** (~28 km dal capoluogo), **città** (~7 km dal centro), per i 107 capoluoghi
 - Un sensore per ogni carburante disponibile, in EUR/L
 - Minimo, massimo e numero di stazioni come attributi
-- Più istanze configurabili, per confrontare zone diverse
+- Più località nella stessa integrazione, per confrontare zone diverse
+- Località aggiunte o rimosse in qualsiasi momento da **Configura**
 - Configurazione interamente da UI, senza API key
 - Aggiornamento ogni 6 ore (la fonte pubblica dati nuovi una volta al giorno)
 
@@ -33,14 +34,16 @@ Copia la cartella `custom_components/prezzi_carburanti/` di questo repository in
 
 1. **Impostazioni → Dispositivi e servizi → Aggiungi integrazione**
 2. Cerca **Prezzi Medi Carburanti**
-3. Scegli l'ambito: *Media nazionale*, *Provincia* o *Città*
-4. Per provincia o città, scegli la località dall'elenco
+3. Scegli cosa seguire, anche più cose insieme:
+   - **Media nazionale** (interruttore)
+   - **Province**: una o più, dal menu a selezione multipla
+   - **Città**: una o più, dal menu a selezione multipla
 
-Per confrontare più zone aggiungi l'integrazione più volte. La stessa combinazione di ambito e località non può essere aggiunta due volte.
+Per aggiungere o togliere località in seguito: **Impostazioni → Dispositivi e servizi → Prezzi Medi Carburanti → Configura**. I sensori delle località rimosse vengono eliminati automaticamente.
 
 ## Sensori
 
-Ogni istanza crea un dispositivo con un sensore per carburante:
+Ogni località selezionata crea un dispositivo con un sensore per carburante:
 
 | Sensore   | Esempio entity_id                    | Unità |
 |-----------|--------------------------------------|-------|
@@ -49,7 +52,13 @@ Ogni istanza crea un dispositivo con un sensore per carburante:
 | GPL       | `sensor.media_nazionale_gpl`         | EUR/L |
 | Metano    | `sensor.media_nazionale_metano`      | EUR/L |
 
-L'`entity_id` dipende dal nome dell'istanza (es. `sensor.provincia_verona_benzina`).
+L'`entity_id` dipende dalla località:
+
+| Località           | Esempio entity_id                  |
+|--------------------|------------------------------------|
+| Media nazionale    | `sensor.media_nazionale_gasolio`   |
+| Provincia di Verona| `sensor.provincia_verona_gasolio`  |
+| Città di Verona    | `sensor.citta_verona_gasolio`      |
 
 ### Attributi
 
@@ -91,3 +100,7 @@ Questa integrazione non è affiliata a mappacarburanti.it né al MIMIT.
 ## Problemi e suggerimenti
 
 Apri una [issue](https://github.com/marco783/ha-prezzi-carburanti/issues).
+
+---
+
+> ℹ️ Questa integrazione è stata sviluppata con l'ausilio dell'intelligenza artificiale ([Claude Code](https://claude.com/claude-code)). Se trovi comportamenti anomali [segnalali](https://github.com/marco783/ha-prezzi-carburanti/issues).

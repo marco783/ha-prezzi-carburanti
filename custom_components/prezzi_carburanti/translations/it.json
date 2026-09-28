@@ -3,20 +3,38 @@
     "step": {
       "user": {
         "title": "Prezzi Medi Carburanti",
-        "description": "Scegli se seguire la media nazionale o quella di una provincia/città specifica — i prezzi variano molto da regione a regione.",
+        "description": "Scegli cosa seguire: media nazionale, una o più province, una o più città (capoluoghi). Potrai cambiare la selezione in seguito da «Configura».",
         "data": {
-          "scope": "Ambito"
-        }
-      },
-      "location": {
-        "title": "Scegli la località",
-        "data": {
-          "slug": "Provincia / città"
+          "national": "Media nazionale",
+          "province": "Province (~28 km dal capoluogo)",
+          "citta": "Città (~7 km dal centro)"
         }
       }
     },
+    "error": {
+      "no_location": "Seleziona almeno una località."
+    },
     "abort": {
-      "already_configured": "Questa combinazione ambito/località è già configurata.",
+      "single_instance_allowed": "L'integrazione è già configurata: usa «Configura» per aggiungere province o città.",
+      "cannot_connect": "Impossibile scaricare l'elenco delle località da mappacarburanti.it. Riprova più tardi."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Prezzi Medi Carburanti",
+        "description": "Aggiungi o rimuovi località. I sensori delle località rimosse vengono eliminati.",
+        "data": {
+          "national": "Media nazionale",
+          "province": "Province (~28 km dal capoluogo)",
+          "citta": "Città (~7 km dal centro)"
+        }
+      }
+    },
+    "error": {
+      "no_location": "Seleziona almeno una località."
+    },
+    "abort": {
       "cannot_connect": "Impossibile scaricare l'elenco delle località da mappacarburanti.it. Riprova più tardi."
     }
   }

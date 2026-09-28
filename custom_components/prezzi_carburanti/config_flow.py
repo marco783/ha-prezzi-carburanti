@@ -1,9 +1,9 @@
-"""Config flow for Prezzi Medi Carburanti.
+"""Config and options flow for Prezzi Medi Carburanti.
 
-Lets the user pick a scope (national average, or a province/city average)
-so a household near a border between very different regional prices (e.g.
-Veneto vs. Sicilia) can track the figure that actually applies to them,
-instead of only the national blend.
+One entry tracks any mix of national average, provinces and cities, so a
+household near a border between very different regional prices (e.g.
+Veneto vs. Sicilia) can follow the figures that actually apply to them.
+Locations are added/removed later from the entry's "Configure" button.
 """
 from __future__ import annotations
 
@@ -12,104 +12,101 @@ import re
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, SelectSelectorMode
-
-from .const import (
-    CONF_SCOPE,
-    CONF_SLUG,
-    DOMAIN,
-    SCOPE_CITTA,
-    SCOPE_NATIONAL,
-    SCOPE_PROVINCIA,
-    SITEMAP_URL,
+from homeassistant.helpers.selector import (
+    BooleanSelector,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
 )
+
+from .const import CONF_CITTA, CONF_NATIONAL, CONF_PROVINCE, DOMAIN, SITEMAP_URL
 
 _LOGGER = logging.getLogger(__name__)
 
-SCOPE_LABELS = {
-    SCOPE_NATIONAL: "Media nazionale",
-    SCOPE_PROVINCIA: "Provincia",
-    SCOPE_CITTA: "Città",
-}
+
+async def _fetch_slugs(hass: HomeAssistant) -> list[str]:
+    # Cities are the provincial capitals and share the province slug, so the
+    # /province/ pages list valid slugs for both the provincia and citta APIs.
+    session = async_get_clientsession(hass)
+    async with session.get(SITEMAP_URL, timeout=15) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
+    return sorted(set(re.findall(r"/province/([a-z-]+)\.html", text)))
+
+
+def _schema(slugs: list[str], defaults: dict) -> vol.Schema:
+    def multi() -> SelectSelector:
+        return SelectSelector(
+            SelectSelectorConfig(
+                options=[{"value": s, "label": s.replace("-", " ").title()} for s in slugs],
+                multiple=True,
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    return vol.Schema(
+        {
+            vol.Optional(CONF_NATIONAL, default=defaults.get(CONF_NATIONAL, True)): BooleanSelector(),
+            vol.Optional(CONF_PROVINCE, default=defaults.get(CONF_PROVINCE, [])): multi(),
+            vol.Optional(CONF_CITTA, default=defaults.get(CONF_CITTA, [])): multi(),
+        }
+    )
+
+
+async def _locations_form(flow, step_id: str, user_input: dict | None, defaults: dict, done):
+    """Shared by config and options flow: show the form, validate, call done(options)."""
+    errors = {}
+    if user_input is not None:
+        if user_input.get(CONF_NATIONAL) or user_input.get(CONF_PROVINCE) or user_input.get(CONF_CITTA):
+            return done(user_input)
+        errors["base"] = "no_location"
+        defaults = user_input
+
+    try:
+        slugs = await _fetch_slugs(flow.hass)
+    except Exception as err:  # noqa: BLE001 - any network/parse failure aborts the flow
+        _LOGGER.warning("Impossibile leggere l'elenco località da %s: %s", SITEMAP_URL, err)
+        return flow.async_abort(reason="cannot_connect")
+    if not slugs:
+        return flow.async_abort(reason="cannot_connect")
+
+    return flow.async_show_form(step_id=step_id, data_schema=_schema(slugs, defaults), errors=errors)
 
 
 class PrezziCarburantiConfigFlow(ConfigFlow, domain=DOMAIN):
-    VERSION = 1
-
-    def __init__(self) -> None:
-        self._scope: str | None = None
+    VERSION = 2
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
-        if user_input is not None:
-            self._scope = user_input[CONF_SCOPE]
-            if self._scope == SCOPE_NATIONAL:
-                return await self._finish(SCOPE_NATIONAL, None)
-            return await self.async_step_location()
-
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_SCOPE, default=SCOPE_NATIONAL): SelectSelector(
-                    SelectSelectorConfig(
-                        options=[
-                            {"value": key, "label": label}
-                            for key, label in SCOPE_LABELS.items()
-                        ],
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                )
-            }
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
+        return await _locations_form(
+            self,
+            "user",
+            user_input,
+            {},
+            lambda opts: self.async_create_entry(title="Prezzi Carburanti", data={}, options=opts),
         )
-        return self.async_show_form(step_id="user", data_schema=schema)
 
-    async def async_step_location(self, user_input: dict | None = None) -> FlowResult:
-        if user_input is not None:
-            return await self._finish(self._scope, user_input[CONF_SLUG])
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        return PrezziCarburantiOptionsFlow(config_entry)
 
-        try:
-            slugs = await self._fetch_slugs()
-        except Exception as err:  # noqa: BLE001 - any network/parse failure aborts the flow
-            _LOGGER.warning("Impossibile leggere l'elenco località da %s: %s", SITEMAP_URL, err)
-            return self.async_abort(reason="cannot_connect")
-        if not slugs:
-            return self.async_abort(reason="cannot_connect")
 
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_SLUG): SelectSelector(
-                    SelectSelectorConfig(
-                        options=[
-                            {"value": slug, "label": slug.replace("-", " ").title()}
-                            for slug in slugs
-                        ],
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                )
-            }
+class PrezziCarburantiOptionsFlow(OptionsFlow):
+    def __init__(self, entry: ConfigEntry) -> None:
+        # Not self.config_entry: assigning it is deprecated on recent HA versions
+        self._entry = entry
+
+    async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
+        return await _locations_form(
+            self,
+            "init",
+            user_input,
+            dict(self._entry.options),
+            lambda opts: self.async_create_entry(title="", data=opts),
         )
-        return self.async_show_form(step_id="location", data_schema=schema)
-
-    async def _fetch_slugs(self) -> list[str]:
-        # Cities are the provincial capitals and share the province slug, so the
-        # /province/ pages list valid slugs for both the provincia and citta APIs.
-        session = async_get_clientsession(self.hass)
-        async with session.get(SITEMAP_URL, timeout=15) as resp:
-            resp.raise_for_status()
-            text = await resp.text()
-        return sorted(set(re.findall(r"/province/([a-z-]+)\.html", text)))
-
-    async def _finish(self, scope: str, slug: str | None) -> FlowResult:
-        unique_id = f"{scope}:{slug}" if slug else scope
-        await self.async_set_unique_id(unique_id)
-        self._abort_if_unique_id_configured()
-
-        title = SCOPE_LABELS[scope]
-        if slug:
-            title = f"{title} — {slug.replace('-', ' ').title()}"
-
-        data = {CONF_SCOPE: scope}
-        if slug:
-            data[CONF_SLUG] = slug
-        return self.async_create_entry(title=title, data=data)

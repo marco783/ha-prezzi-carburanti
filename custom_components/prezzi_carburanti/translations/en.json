@@ -3,20 +3,38 @@
     "step": {
       "user": {
         "title": "Average Fuel Prices",
-        "description": "Choose whether to track the national average or a specific province/city — prices vary a lot across Italy.",
+        "description": "Choose what to track: national average, one or more provinces, one or more cities (provincial capitals). You can change it later from “Configure”.",
         "data": {
-          "scope": "Scope"
-        }
-      },
-      "location": {
-        "title": "Choose the location",
-        "data": {
-          "slug": "Province / city"
+          "national": "National average",
+          "province": "Provinces (~28 km from the capital)",
+          "citta": "Cities (~7 km from the centre)"
         }
       }
     },
+    "error": {
+      "no_location": "Select at least one location."
+    },
     "abort": {
-      "already_configured": "This scope/location is already configured.",
+      "single_instance_allowed": "Already configured: use “Configure” to add provinces or cities.",
+      "cannot_connect": "Could not download the location list from mappacarburanti.it. Please try again later."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Average Fuel Prices",
+        "description": "Add or remove locations. Sensors of removed locations are deleted.",
+        "data": {
+          "national": "National average",
+          "province": "Provinces (~28 km from the capital)",
+          "citta": "Cities (~7 km from the centre)"
+        }
+      }
+    },
+    "error": {
+      "no_location": "Select at least one location."
+    },
+    "abort": {
       "cannot_connect": "Could not download the location list from mappacarburanti.it. Please try again later."
     }
   }
