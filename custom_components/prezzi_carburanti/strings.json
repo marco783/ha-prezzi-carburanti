@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Prezzi Medi Carburanti",
+        "description": "Scegli se seguire la media nazionale o quella di una provincia/città specifica — i prezzi variano molto da regione a regione.",
+        "data": {
+          "scope": "Ambito"
+        }
+      },
+      "location": {
+        "title": "Scegli la località",
+        "data": {
+          "slug": "Provincia / città"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Questa combinazione ambito/località è già configurata.",
+      "cannot_connect": "Impossibile scaricare l'elenco delle località da mappacarburanti.it. Riprova più tardi."
+    }
+  }
+}

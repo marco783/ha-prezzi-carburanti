@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Average Fuel Prices",
+        "description": "Choose whether to track the national average or a specific province/city — prices vary a lot across Italy.",
+        "data": {
+          "scope": "Scope"
+        }
+      },
+      "location": {
+        "title": "Choose the location",
+        "data": {
+          "slug": "Province / city"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This scope/location is already configured.",
+      "cannot_connect": "Could not download the location list from mappacarburanti.it. Please try again later."
+    }
+  }
+}
