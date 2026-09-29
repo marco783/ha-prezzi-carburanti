@@ -7,15 +7,11 @@ Locations are added/removed later from the entry's "Configure" button.
 """
 from __future__ import annotations
 
-import logging
-import re
-
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
     SelectSelector,
@@ -23,26 +19,14 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import CONF_CITTA, CONF_NATIONAL, CONF_PROVINCE, DOMAIN, SITEMAP_URL
-
-_LOGGER = logging.getLogger(__name__)
-
-
-async def _fetch_slugs(hass: HomeAssistant) -> list[str]:
-    # Cities are the provincial capitals and share the province slug, so the
-    # /province/ pages list valid slugs for both the provincia and citta APIs.
-    session = async_get_clientsession(hass)
-    async with session.get(SITEMAP_URL, timeout=15) as resp:
-        resp.raise_for_status()
-        text = await resp.text()
-    return sorted(set(re.findall(r"/province/([a-z-]+)\.html", text)))
-
+from .const import CONF_CITTA, CONF_NATIONAL, CONF_PROVINCE, DOMAIN
+from .provinces import PROVINCES
 
 def _schema(slugs: list[str], defaults: dict) -> vol.Schema:
     def multi() -> SelectSelector:
         return SelectSelector(
             SelectSelectorConfig(
-                options=[{"value": s, "label": s.replace("-", " ").title()} for s in slugs],
+                options=[{"value": s, "label": PROVINCES[s]["name"]} for s in slugs],
                 multiple=True,
                 mode=SelectSelectorMode.DROPDOWN,
             )
@@ -66,13 +50,7 @@ async def _locations_form(flow, step_id: str, user_input: dict | None, defaults:
         errors["base"] = "no_location"
         defaults = user_input
 
-    try:
-        slugs = await _fetch_slugs(flow.hass)
-    except Exception as err:  # noqa: BLE001 - any network/parse failure aborts the flow
-        _LOGGER.warning("Impossibile leggere l'elenco località da %s: %s", SITEMAP_URL, err)
-        return flow.async_abort(reason="cannot_connect")
-    if not slugs:
-        return flow.async_abort(reason="cannot_connect")
+    slugs = sorted(PROVINCES)
 
     return flow.async_show_form(step_id=step_id, data_schema=_schema(slugs, defaults), errors=errors)
 

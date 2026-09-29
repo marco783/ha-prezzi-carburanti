@@ -4,10 +4,9 @@ from datetime import timedelta
 DOMAIN = "prezzi_carburanti"
 UPDATE_INTERVAL = timedelta(hours=6)
 
-SITEMAP_URL = "https://mappacarburanti.it/sitemap.xml"
-NATIONAL_URL = "https://mappacarburanti.it/api/prezzi/national.json"
-PROVINCIA_URL = "https://mappacarburanti.it/api/prezzi/provincia/{slug}.json"
-CITTA_URL = "https://mappacarburanti.it/api/prezzi/citta/{slug}.json"
+PRICES_URL = "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv"
+STATIONS_URL = "https://www.mimit.gov.it/images/exportCSV/anagrafica_impianti_attivi.csv"
+STATIONS_TTL = timedelta(hours=24)
 
 SCOPE_NATIONAL = "national"
 SCOPE_PROVINCIA = "provincia"

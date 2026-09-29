@@ -3,7 +3,7 @@
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![GitHub release](https://img.shields.io/github/v/release/marco783/ha-prezzi-carburanti)](https://github.com/marco783/ha-prezzi-carburanti/releases)
 
-Integrazione per [Home Assistant](https://www.home-assistant.io/) che espone il **prezzo medio di benzina, gasolio, GPL e metano** in Italia, letto da [mappacarburanti.it](https://mappacarburanti.it) (dati ufficiali MIMIT, licenza CC0-1.0).
+Integrazione per [Home Assistant](https://www.home-assistant.io/) che espone il **prezzo medio di benzina, gasolio, GPL e metano** in Italia, calcolato dagli open data ufficiali [MIMIT](https://www.mimit.gov.it/it/prezzo-medio-carburanti) (osservaprezzi carburanti).
 
 Puoi seguire la media nazionale oppure quella di una provincia o di una città: i prezzi variano molto da regione a regione.
 
@@ -89,13 +89,12 @@ automation:
 
 ## Fonte dati
 
-- `https://mappacarburanti.it/api/prezzi/national.json`
-- `https://mappacarburanti.it/api/prezzi/provincia/{slug}.json`
-- `https://mappacarburanti.it/api/prezzi/citta/{slug}.json`
+- `https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv` (prezzi, pubblicato ogni giorno)
+- `https://www.mimit.gov.it/images/exportCSV/anagrafica_impianti_attivi.csv` (anagrafica, cache 24 h)
 
-L'elenco delle località viene letto dalla sitemap del sito durante la configurazione. Non serve autenticazione.
+Metodo (come la media regionale stradale MIMIT): impianti autostradali esclusi, solo prodotti base (benzina, gasolio, GPL, metano), un prezzo per impianto (self se presente), prezzi più vecchi di 8 giorni scartati. `min`/`max`/`stazioni_rilevate` sono per impianto. Provincia = sigla dell'anagrafica; città = comune capoluogo. `data_rilevazione` è la data di estrazione del file. Non serve autenticazione.
 
-Questa integrazione non è affiliata a mappacarburanti.it né al MIMIT.
+Questa integrazione non è affiliata al MIMIT.
 
 ## Problemi e suggerimenti
 
